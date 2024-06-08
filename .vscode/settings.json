@@ -5,5 +5,8 @@
     "ngClass",
     "classList"
   ],
-  "files.associations": { "*.scss": "tailwindcss", "*.css": "tailwindcss" }
+  "files.associations": { "*.scss": "tailwindcss", "*.css": "tailwindcss" },
+  "rust-analyzer.linkedProjects": [
+    "./src-tauri/Cargo.toml"
+  ]
 }

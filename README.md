@@ -10,6 +10,7 @@
 - SQLx + SQLite
 - File Based DB Auto Migrations
 - Spectra (Typesafe Tauri Commands)
+- Tracing (Logging Framework)
 
 
 ## Recommended IDE Setup
