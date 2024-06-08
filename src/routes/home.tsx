@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import MainLayout from "@layouts/main-layout";
 import TechLogo from "@components/tech-logo";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function Home() {
   const [greetMsg, setGreetMsg] = createSignal("");
