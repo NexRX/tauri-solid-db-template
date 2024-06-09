@@ -1,21 +1,14 @@
 use crate::CONFIG_DIR;
 use sqlx::migrate::MigrateDatabase;
 use tauri_plugin_sql::{Migration, MigrationKind};
+use tracing::info;
 
 pub mod greetings;
 
 pub type Pool = sqlx::Pool<sqlx::Sqlite>;
 
 pub fn db_url() -> String {
-    #[cfg(not(debug_assertions))] // release
-    {
-        env!("DATABASE_URL").to_string()
-    }
-
-    #[cfg(debug_assertions)] // non-release
-    {
-        format!("{}/db.sqlite", CONFIG_DIR.to_string_lossy())
-    }
+    CONFIG_DIR.join("db.sqlite").to_string_lossy().to_string()
 }
 
 pub fn new_pool() -> Pool {
@@ -69,6 +62,7 @@ pub async fn create_if_none() -> Result<(), sqlx::Error> {
     let db_url = db_url();
 
     if !sqlx::Sqlite::database_exists(&db_url).await? {
+        info!(db_url, "Need to create database");
         sqlx::Sqlite::create_database(&db_url).await?;
     }
 

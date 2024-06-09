@@ -1,12 +1,20 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::path::PathBuf;
+use std::{fs::create_dir_all, path::PathBuf};
 
+use once_cell::sync::Lazy;
+use tracing::info;
+
+extern crate tracing;
 mod db;
 
-lazy_static::lazy_static! {
-    static ref CONFIG_DIR: PathBuf = get_app_dirs().config_dir().to_path_buf();
-}
+static CONFIG_DIR: Lazy<PathBuf> = Lazy::new(|| match cfg!(debug_assertions) {
+    true => PathBuf::from(format!( 
+        "{}/target/debug/config",
+        env!("CARGO_MANIFEST_DIR")
+    )),
+    false => get_app_dirs().config_dir().to_path_buf(),
+});
 
 // Learn more about Tauri commands at https://v2.tauri.app/develop/plugins/#adding-commands
 #[tauri::command]
@@ -16,6 +24,20 @@ fn greet(name: &str) -> String {
 }
 
 fn main() {
+    // Setup logging and Config Folder
+    let subscriber = tracing_subscriber::FmtSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+
+    info!(CONFIG_DIR = ?&*CONFIG_DIR, "Starting app");
+    create_dir_all(&*CONFIG_DIR).expect("Could not create config dir");
+
+    // Create DB and Pool
+    let db_pool = tauri::async_runtime::block_on(async {
+        db::create_if_none().await.unwrap();
+        db::new_pool()
+    });
+
+    // Build Tauri Application
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(db::setup_builder().build())
@@ -31,11 +53,7 @@ fn main() {
                 .build()
                 .unwrap()
         })
-        .manage(db::new_pool())
-        .setup(|_| {
-            tauri::async_runtime::block_on(db::create_if_none())?;
-            Ok(())
-        })
+        .manage(db_pool)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

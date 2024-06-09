@@ -2,3 +2,4 @@ node_modules
 dist
 pnpm-lock.yaml
 src-tauri/Cargo.lock
+src/bindings.ts
