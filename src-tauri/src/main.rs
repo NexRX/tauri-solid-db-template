@@ -20,22 +20,20 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(db::setup_builder().build())
         .invoke_handler({
-            let builder = tauri_specta::ts::builder().commands(tauri_specta::collect_commands![
-                greet,
-                db::greetings::get_all_grettings,
-                db::greetings::create_greeting,
-                db::greetings::delete_greeting
-            ]); // <- Each of your commands
-
-            #[cfg(debug_assertions)]
-            let builder = builder.path("../src/bindings.ts");
-
-            builder.build().unwrap()
+            tauri_specta::ts::builder()
+                .commands(tauri_specta::collect_commands![
+                    greet,
+                    db::greetings::get_all_grettings,
+                    db::greetings::create_greeting,
+                    db::greetings::delete_greeting
+                ]) // <- Your commands here
+                .path("../src/bindings.ts")
+                .build()
+                .unwrap()
         })
         .manage(db::new_pool())
         .setup(|_| {
             tauri::async_runtime::block_on(db::create_if_none())?;
-
             Ok(())
         })
         .run(tauri::generate_context!())
