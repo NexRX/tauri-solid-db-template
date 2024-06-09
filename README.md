@@ -12,6 +12,10 @@
 - Spectra (Typesafe Tauri Commands)
 - Tracing (Logging Framework)
 
+## Todo
+- [ ] Add CRUD example in UI
+- [ ] Add run, setup & migration guide to this readme
+- [ ] Clean up code a bit more
 
 ## Recommended IDE Setup
 

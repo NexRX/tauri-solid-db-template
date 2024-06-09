@@ -1,9 +1,30 @@
+use crate::CONFIG_DIR;
+use sqlx::migrate::MigrateDatabase;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-pub fn setup_builder() -> tauri_plugin_sql::Builder {
-    let dirs = crate::get_app_dirs();
+pub mod greetings;
 
-    let db_url = dirs.cache_dir().to_string_lossy();
+pub type Pool = sqlx::Pool<sqlx::Sqlite>;
+
+pub fn db_url() -> String {
+    #[cfg(not(debug_assertions))] // release
+    {
+        env!("DATABASE_URL").to_string()
+    }
+
+    #[cfg(debug_assertions)] // non-release
+    {
+        format!("{}/db.sqlite", CONFIG_DIR.to_string_lossy())
+    }
+}
+
+pub fn new_pool() -> Pool {
+    let db_url = db_url();
+    sqlx::SqlitePool::connect_lazy(&db_url).unwrap()
+}
+
+pub fn setup_builder() -> tauri_plugin_sql::Builder {
+    let db_url = db_url();
     let migrations = migrations();
 
     tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations)
@@ -42,4 +63,14 @@ fn create_migration_from_file(file: &'static include_dir::File) -> Option<Migrat
     };
 
     Some(migration)
+}
+
+pub async fn create_if_none() -> Result<(), sqlx::Error> {
+    let db_url = db_url();
+
+    if !sqlx::Sqlite::database_exists(&db_url).await? {
+        sqlx::Sqlite::create_database(&db_url).await?;
+    }
+
+    Ok(())
 }
