@@ -1,16 +1,19 @@
-import { createSignal } from "solid-js";
+import { For, createSignal, onMount } from "solid-js";
 import MainLayout from "@layouts/main-layout";
 import TechLogo from "@components/tech-logo";
-import { invoke } from "@tauri-apps/api/core";
+import { commands, Greeting } from "../bindings";
 
 export default function Home() {
   const [greetMsg, setGreetMsg] = createSignal("");
-  const [name, setName] = createSignal("");
+  const [greetings, setGreetings] = createSignal<Greeting[]>([]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name: name() }));
-  }
+  onMount(() => {
+    commands
+      .getAllGrettings()
+      .then((result) =>
+        result.status === "ok" ? setGreetings(result.data) : []
+      );
+  });
 
   return (
     <MainLayout>
@@ -28,18 +31,33 @@ export default function Home() {
         class="flex flex-row gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          greet();
+          commands.createGreeting(greetMsg());
         }}
       >
         <input
           id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
+          onChange={(e) => setGreetMsg(e.currentTarget.value)}
           placeholder="Enter a name..."
         />
         <button type="submit">Greet</button>
       </form>
-      <p>{greetMsg()}</p>
-      <a type="submit" href="/bad-route">Get Lost</a>
+      <button
+        onClick={async () => {
+          const greetings = await commands.getAllGrettings();
+          if (greetings.status === "ok") {
+            console.log(greetings);
+            setGreetings(greetings.data);
+          } else {
+            console.error(greetings);
+          }
+        }}
+      >
+        Refresh
+      </button>
+      <For each={greetings()}>{(greeting) => <p>{greeting.message}</p>}</For>
+      <a type="submit" href="/bad-route">
+        Get Lost
+      </a>
     </MainLayout>
   );
 }

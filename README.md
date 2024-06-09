@@ -13,7 +13,8 @@
 - Tracing (Logging Framework)
 
 ## Todo
-- [ ] Add CRUD example in UI
+- [x] Add CRUD example in UI
+- [ ] Create table for greetings in UI
 - [ ] Add run, setup & migration guide to this readme
 - [ ] Clean up code a bit more
 

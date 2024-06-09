@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use sqlx::prelude::FromRow;
 use tauri::State;
+use tracing::info;
 
 use super::Pool;
 
@@ -65,6 +66,7 @@ impl Greeting {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_all_grettings(pool: State<'_, Pool>) -> Result<Vec<Greeting>, String> {
+    info!("Getting all greetings");
     Greeting::get_all(&pool).await.map_err(|err| {
         human_errors::system_with_internal(
             "Failed to get greetings from database",
@@ -77,7 +79,14 @@ pub async fn get_all_grettings(pool: State<'_, Pool>) -> Result<Vec<Greeting>, S
 
 #[tauri::command]
 #[specta::specta]
-pub async fn create_greeting(pool: State<'_, Pool>, greeting: Greeting) -> Result<i32, String> {
+pub async fn create_greeting(pool: State<'_, Pool>, message: String) -> Result<i32, String> {
+    info!("Creating given greeting");
+    let greeting = Greeting {
+        id: 0,
+        created: chrono::Utc::now().naive_utc(),
+        message,
+    };
+    
     greeting.create(&pool).await.map_err(|err| {
         human_errors::system_with_internal(
             "Failed to create greetings from database",
@@ -91,9 +100,10 @@ pub async fn create_greeting(pool: State<'_, Pool>, greeting: Greeting) -> Resul
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_greeting(pool: State<'_, Pool>, id: i32) -> Result<bool, String> {
+    info!("Deleting given greeting id");
     Greeting::delete_id(&pool, id).await.map_err(|err| {
         human_errors::system_with_internal(
-            "Failed to create greetings from database",
+            "Failed to delete greeting from database",
             "Try closing this app and deleting the database in the apps config folder",
             err,
         )
